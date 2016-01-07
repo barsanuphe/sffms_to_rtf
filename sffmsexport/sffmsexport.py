@@ -25,7 +25,9 @@ class Project(object):
             matches = re.match(r'(\\include|\\input){(?P<filename>.*?)}', line)
             if matches:
                 sub_path = Path(matches.groupdict()["filename"])
-                # TODO add .tex if necessary
+                # add .tex if necessary
+                if sub_path.suffix == "":
+                    sub_path = sub_path.with_suffix(".tex")
                 # check if absolute and deal with relative
                 if not sub_path.is_absolute():
                     sub_path = Path(self.path.parent, sub_path)
