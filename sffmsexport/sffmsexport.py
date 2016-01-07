@@ -52,14 +52,33 @@ class Project(object):
             compt += 1
 
         if compt == 10:
-            raise Exception("More than 10 levels of inclusions, probably circular.")
+            raise Exception("More than 10 levels of inclusions, stopping.")
         else:
             self.lines = complete_lines
 
     def clean_all_lines(self):
-        for (i, line) in enumerate(self.lines):
-            self.lines[i] = line.strip()
-            # TODO clean everything
+
+        # parse and join multiline tags
+        joined_lines = []
+        join_next_line = False
+        for line in self.lines:
+
+            newline = line.strip()
+            if join_next_line:
+                join_next_line = False
+                joined_lines[-1] += "\n" + newline
+            else:
+                joined_lines.append(newline)
+
+            if newline.endswith(r"\\"):
+                join_next_line = True
+                joined_lines[-1] = joined_lines[-1][:-2]
+
+        self.lines = joined_lines
+
+        # for (i, line) in enumerate(self.lines):
+        #     self.lines[i] = line.strip()
+        #  TODO clean everything
 
     def extract_parts(self):
         start_document = 0
@@ -70,11 +89,13 @@ class Project(object):
                           r'(\\authorname){(?P<author_name>.*?)}|'
                           r'(\\surname){(?P<surname>.*?)}|'
                           r'(\\address){(?P<address>.*?)}|'
-                          r'(\\wordcount){(?P<wordcount>.*?)}|'
+                          r'(\\wordcount){(?P<wordcount>.*?)}|',
+                          re.DOTALL
                           )
         for (i, line) in enumerate(self.lines):
             # extract metadata
             matches = re.match(expr, line)
+
             if matches:
                 results = matches.groupdict()
                 if results["title"]:
@@ -153,7 +174,7 @@ class RTF(object):
             author_name,
             "\\tab " + wordcount + " words",
             "\\line\n",
-            address + "\\par\n",
+            "\\pard" + address.replace("\n", "\line ") + "\\par\n",
             "\\pard\\pardeftab720\\ql\\qnatural\\sb4000\\par\n",
             "\\pard\\sl510 \\qc\\f0\\fs24\n",
             title.upper() + "\\\n",
@@ -188,14 +209,6 @@ def main():
                         metavar="FILE",
                         help='Main tex file.')
 
-    parser.add_argument('-o',
-                        '--output',
-                        dest='output',
-                        action='store',
-                        nargs=1,
-                        metavar="OUTPUT",
-                        help='Output file, if necessary.')
-
     args = parser.parse_args()
 
     try:
@@ -204,8 +217,6 @@ def main():
     except Exception as err:
         print("Incorrect input!")
         sys.exit(-1)
-
-    # TODO deal with outputfile
 
     p = Project(input_file)
     p.read_all_lines()
