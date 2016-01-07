@@ -1,3 +1,4 @@
+# coding=utf-8
 import argparse
 import sys
 import re
@@ -91,7 +92,7 @@ class Project(object):
                           r'(\\authorname){(?P<author_name>.*?)}|'
                           r'(\\surname){(?P<surname>.*?)}|'
                           r'(\\address){(?P<address>.*?)}|'
-                          r'(\\wordcount){(?P<wordcount>.*?)}|',
+                          r'(\\wordcount){(?P<wordcount>.*?)}',
                           re.DOTALL
                           )
         for (i, line) in enumerate(self.lines):
@@ -186,10 +187,20 @@ class RTF(object):
         ])
 
     def add_document(self, document_lines):
+        expr = re.compile(r'(\\chapter){(?P<numbered_chapter>.*?)}|'
+                          r'(\\chapter\*){(?P<chapter>.*?)}')
+
+        chapter_number = 1
         for line in document_lines:
-            # TODO \chapter \chapter{xx}, \part{xx}
-            # => '\\pard\\sl510\\qc\\cf0 {\\b <TITRE> } \\par\n'
-            if re.search(r'\\scenebreak|\\newscene', line):
+            matches = re.match(expr, line)
+            if matches:
+                if matches.groupdict()["chapter"]:
+                    self.lines.append('\page\n \\pard\\sl510\\qc\\cf0 {\\b %s } \\par\n' % matches.groupdict()["chapter"])
+                if matches.groupdict()["numbered_chapter"]:
+                    self.lines.append('\page\n \\pard\\sl510\\qc\\cf0 {\\b Chapter %s } \\par\n' % chapter_number)
+                    chapter_number += 1
+                    self.lines.append('\\pard\\sl510\\qc\\cf0 {\\b %s } \\par\n' % matches.groupdict()["numbered_chapter"])
+            elif re.search(r'\\scenebreak|\\newscene', line):
                 self.lines.append('\\pard\\sl510\\qc\\cf0 # \\par\n')
             else:
                 self.lines.append('\\pard\\sl510\\f0\\fs24\\cf0 ' + line + '\\par\n')
