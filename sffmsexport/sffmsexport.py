@@ -162,7 +162,8 @@ class RTF(object):
                       "{\\colortbl;\\red255\\green255\\blue255;\\red255\\green0\\blue0;}\n",
                       "\\margl1440\\margr1440\\vieww12240\\viewh15840\\viewkind1\\viewscale100\\titlepg\n"]
 
-    def add_metadata_header(self, author, author_name, surname, address, title, running_title, wordcount="100"):
+    def add_metadata_header(self, author, author_name, surname, address, title,
+                            running_title, wordcount="100"):
         self.lines.extend([
             "{\\info\n",
             "{\\title %s}\n" % title,
@@ -189,7 +190,6 @@ class RTF(object):
     def add_document(self, document_lines):
         expr = re.compile(r'(\\chapter){(?P<numbered_chapter>.*?)}|'
                           r'(\\chapter\*){(?P<chapter>.*?)}')
-
         chapter_number = 1
         for line in document_lines:
             matches = re.match(expr, line)
@@ -203,6 +203,8 @@ class RTF(object):
             elif re.search(r'\\scenebreak|\\newscene', line):
                 self.lines.append('\\pard\\sl510\\qc\\cf0 # \\par\n')
             else:
+                line = line.replace(r"\emph{", '{\\ul ')
+                line = line.replace(r"\thought{", '{\\ul ')
                 self.lines.append('\\pard\\sl510\\f0\\fs24\\cf0 ' + line + '\\par\n')
         self.lines.append('\\pard\\par\\pard\\sl510 \\qc\\f0\\fs24 # # # # #\\par')
         self.lines.append('}}\n')
