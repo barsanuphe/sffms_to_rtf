@@ -1,4 +1,3 @@
-# coding=utf-8
 """sffmsexport.
 Export latex sffms files to rtf.
 """

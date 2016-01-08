@@ -1,4 +1,3 @@
-# coding=utf-8
 import argparse
 import sys
 import re
@@ -60,7 +59,6 @@ class Project(object):
             self.lines = complete_lines
 
     def clean_all_lines(self):
-
         # parse and join multiline tags
         joined_lines = []
         join_next_line = False
@@ -141,50 +139,82 @@ class Project(object):
         # make rtf
         rtf = RTF(self.output_path)
         rtf.add_file_header()
-        rtf.add_metadata_header(self.author, self.author_name, self.surname, self.address,
-                                self.title, self.running_title, self.wordcount)
+        rtf.add_metadata_header(self.author, self.author_name, self.surname,
+                                self.address, self.title, self.running_title,
+                                self.wordcount)
         rtf.add_document(self.document)
         rtf.write()
 
     def __str__(self):
-        return "\n".join([self.author, self.address, str(self.disposable), self.author_name, self.surname,
-                          self.running_title, self.title, self.wordcount, "\n".join(self.document)])
+        return "\n".join([self.author, self.address, str(self.disposable),
+                          self.author_name, self.surname,
+                          self.running_title, self.title, self.wordcount,
+                          "\n".join(self.document)])
 
 
 class RTF(object):
+    CENTER = "\\qc "
+    PAGE_BREAK = "\\page "
+    LINE_BREAK = "\\line "
+    START_PAR = "\\pard "
+    INDENT = "\\fi720 "
+    END_PAR = "\\par "
+    DOUBLE_SPACE = "\\sl480\\slmult1 "
+    SIZE_12 = "\\f0\\fs24 "
+    HALF_PAGE_VERTICAL_SPACE = "\\sb3600"
+
+    def centered_p(self, text):
+        return self.START_PAR + self.DOUBLE_SPACE + self.CENTER + \
+               self.SIZE_12 + text + self.END_PAR
+
+    def indented_p(self, text):
+        return self.START_PAR + self.INDENT + self.DOUBLE_SPACE + \
+               self.SIZE_12 + text + self.END_PAR
+
+    def p(self, text):
+        return self.START_PAR + self.DOUBLE_SPACE + self.SIZE_12 + text + \
+               self.END_PAR
+
+    def single_space_p(self, text):
+        return self.START_PAR + self.SIZE_12 + text + self.END_PAR
+
+    def blank_line(self):
+        return self.p("")
+
+    def bold(self, text):
+        return '{\\b %s }' % text
+
     def __init__(self, filename):
         self.filename = filename
         self.lines = []
 
     def add_file_header(self):
-        self.lines = ["{\\rtf1\\ansi\\deff1\\ansicpg10000\n",
-                      "{\\fonttbl\\f0\\fmodern\\fcharset77 Courier;\\f1\\froman\\fcharset77 Times New Roman;}\n",
-                      "{\\colortbl;\\red255\\green255\\blue255;\\red255\\green0\\blue0;}\n",
-                      "\\margl1440\\margr1440\\vieww12240\\viewh15840\\viewkind1\\viewscale100\\titlepg\n"]
+        self.lines = ["{\\rtf1\\ansi\\deff1\\ansicpg10000",
+                      "{\\fonttbl\\f0\\fmodern\\fcharset77 Courier;",
+                      "\\f1\\froman\\fcharset77 Times New Roman;}",
+                      "\\margl1440\\margr1440\\vieww12240\\viewh15840",
+                      "\\viewkind1\\viewscale100\\titlepg"]
 
     def add_metadata_header(self, author, author_name, surname, address, title,
                             running_title, wordcount="100"):
         self.lines.extend([
-            "{\\info\n",
-            "{\\title %s}\n" % title,
+            "{\\info",
+            "{\\title %s}" % title,
             "{\\doccomm Generated from latex! }",
             "{\\author %s}}" % author,
-            "{\\headerf}\n",
-            "{\\header\\pard\\qr\\f0{" + surname + " / " + running_title.upper() + " / " + "{\\field{\\*\\fldinst PAGE }}}\\par}\n",
-            "{\\i0\\scaps0\\b0\n",
-            "\\deftab360\n",
-            "\\pard\\tx7500\\pardeftab360\\ql\\qnatural\n",
-            "\\f0\\fs24 \\cf0\n",
-            author_name,
-            "\\tab " + wordcount + " words",
-            "\\line\n",
-            "\\pard" + address.replace("\n", "\line ") + "\\par\n",
-            "\\pard\\pardeftab720\\ql\\qnatural\\sb4000\\par\n",
-            "\\pard\\sl510 \\qc\\f0\\fs24\n",
-            title.upper() + "\\\n",
-            "by " + author + "\\par\n",
-            "\\pard\\sl510\\f0\\fs24\n",
-            "\\cf0 \\\n"
+            "{\\headerf}",
+            "{\\header" + self.single_space_p("\\qr\\f0{" + surname + " / " +
+            running_title.upper() + " / {\\field{\\*\\fldinst PAGE }}}") + "}",
+            "{\\i0\\scaps0\\b0",
+            self.single_space_p("\\tqr\\tx10000" + author_name + "\\tab " +
+                                wordcount + " words"),
+            self.LINE_BREAK,
+            self.single_space_p(address.replace("\n", self.LINE_BREAK)),
+            self.p(self.HALF_PAGE_VERTICAL_SPACE),
+            self.centered_p(title.upper()),
+            self.centered_p("by " + author),
+            self.blank_line(),
+            self.blank_line(),
         ])
 
     def add_document(self, document_lines):
@@ -195,19 +225,21 @@ class RTF(object):
             matches = re.match(expr, line)
             if matches:
                 if matches.groupdict()["chapter"]:
-                    self.lines.append('\page\n \\pard\\sl510\\qc\\cf0 {\\b %s } \\par\n' % matches.groupdict()["chapter"])
+                    self.lines.append(self.centered_p(self.bold(matches.groupdict()["chapter"])))
+
                 if matches.groupdict()["numbered_chapter"]:
-                    self.lines.append('\page\n \\pard\\sl510\\qc\\cf0 {\\b Chapter %s } \\par\n' % chapter_number)
+                    self.lines.append(
+                        self.centered_p(self.bold('Chapter %s' % chapter_number)))
+                    self.lines.append(self.centered_p(self.bold(matches.groupdict()["numbered_chapter"])))
                     chapter_number += 1
-                    self.lines.append('\\pard\\sl510\\qc\\cf0 {\\b %s } \\par\n' % matches.groupdict()["numbered_chapter"])
             elif re.search(r'\\scenebreak|\\newscene', line):
-                self.lines.append('\\pard\\sl510\\qc\\cf0 # \\par\n')
+                self.lines.append(self.centered_p("#"))
             else:
                 line = line.replace(r"\emph{", '{\\ul ')
                 line = line.replace(r"\thought{", '{\\ul ')
-                self.lines.append('\\pard\\sl510\\f0\\fs24\\cf0 ' + line + '\\par\n')
-        self.lines.append('\\pard\\par\\pard\\sl510 \\qc\\f0\\fs24 # # # # #\\par')
-        self.lines.append('}}\n')
+                self.lines.append(self.indented_p(line))
+        self.lines.append(self.centered_p("# # # # #"))
+        self.lines.append('}}')
 
     def write(self):
         with self.filename.open("w") as f:
@@ -239,6 +271,7 @@ def main():
     p.extract_parts()
     p.join_paragraphs()
     p.generate_output()
+
 
 if __name__ == "__main__":
     main()
