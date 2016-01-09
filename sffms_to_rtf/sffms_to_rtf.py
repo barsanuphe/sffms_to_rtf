@@ -63,7 +63,6 @@ class Project(object):
         joined_lines = []
         join_next_line = False
         for line in self.lines:
-
             newline = line.strip()
             if join_next_line:
                 join_next_line = False
@@ -133,7 +132,7 @@ class Project(object):
 
     def generate_output(self):
         # make rtf
-        rtf = RTF(self.output_path)
+        rtf = RtfFile(self.output_path)
         rtf.add_file_header()
         rtf.add_metadata_header(self.author, self.author_name, self.surname,
                                 self.address, self.title, self.running_title,
@@ -148,7 +147,7 @@ class Project(object):
                           "\n".join(self.document)])
 
 
-class RTF(object):
+class Rtf(object):
     CENTER = "\\qc "
     PAGE_BREAK = "\\page "
     LINE_BREAK = "\\line "
@@ -158,38 +157,28 @@ class RTF(object):
     DOUBLE_SPACE = "\\sl480\\slmult1 "
     SIZE_12 = "\\f0\\fs24 "
     HALF_PAGE_VERTICAL_SPACE = "\\sb3600"
+    BOLD = '{\\b %s }'
 
-    def centered_p(self, text):
-        return self.START_PAR + self.DOUBLE_SPACE + self.CENTER + \
-               self.SIZE_12 + text + self.END_PAR
+    P_CENTER = START_PAR + DOUBLE_SPACE + CENTER + SIZE_12 + "%s" + END_PAR
+    P_CENTER_B = P_CENTER % BOLD
+    P_INDENT = START_PAR + INDENT + DOUBLE_SPACE + SIZE_12 + "%s" + END_PAR
+    P = START_PAR + DOUBLE_SPACE + SIZE_12 + "%s" + END_PAR
+    P_SINGLE = START_PAR + SIZE_12 + "%s" + END_PAR
+    BLANK = P % ""
 
-    def indented_p(self, text):
-        return self.START_PAR + self.INDENT + self.DOUBLE_SPACE + \
-               self.SIZE_12 + text + self.END_PAR
+    HEADER = "{\\rtf1\\ansi\\deff1\\ansicpg10000{\\fonttbl\\f0\\fmodern" \
+             "\\fcharset77 Courier;\\f1\\froman\\fcharset77 Times New Roman;}" \
+             "\\margl1440\\margr1440\\vieww12240\\viewh15840\\viewkind1" \
+             "\\viewscale100\\titlepg"
 
-    def p(self, text):
-        return self.START_PAR + self.DOUBLE_SPACE + self.SIZE_12 + text + \
-               self.END_PAR
 
-    def single_space_p(self, text):
-        return self.START_PAR + self.SIZE_12 + text + self.END_PAR
-
-    def blank_line(self):
-        return self.p("")
-
-    def bold(self, text):
-        return '{\\b %s }' % text
-
+class RtfFile(object):
     def __init__(self, filename):
         self.filename = filename
         self.lines = []
 
     def add_file_header(self):
-        self.lines = ["{\\rtf1\\ansi\\deff1\\ansicpg10000",
-                      "{\\fonttbl\\f0\\fmodern\\fcharset77 Courier;",
-                      "\\f1\\froman\\fcharset77 Times New Roman;}",
-                      "\\margl1440\\margr1440\\vieww12240\\viewh15840",
-                      "\\viewkind1\\viewscale100\\titlepg"]
+        self.lines.append(Rtf.HEADER)
 
     def add_metadata_header(self, author, author_name, surname, address, title,
                             running_title, wordcount="100"):
@@ -199,18 +188,20 @@ class RTF(object):
             "{\\doccomm Generated from latex! }",
             "{\\author %s}}" % author,
             "{\\headerf}",
-            "{\\header" + self.single_space_p("\\qr\\f0{" + surname + " / " +
-            running_title.upper() + " / {\\field{\\*\\fldinst PAGE }}}") + "}",
+            "{\\header" + Rtf.P_SINGLE % ("\\qr\\f0{" + surname + " / " +
+                                          running_title.upper() +
+                                          " / {\\field{\\*\\fldinst PAGE }}}") +
+            "}",
             "{\\i0\\scaps0\\b0",
-            self.single_space_p("\\tqr\\tx10000" + author_name + "\\tab " +
-                                wordcount + " words"),
-            self.LINE_BREAK,
-            self.single_space_p(address.replace("\n", self.LINE_BREAK)),
-            self.p(self.HALF_PAGE_VERTICAL_SPACE),
-            self.centered_p(title.upper()),
-            self.centered_p("by " + author),
-            self.blank_line(),
-            self.blank_line(),
+            Rtf.P_SINGLE % ("\\tqr\\tx10000" + author_name +
+                            "\\tab " + wordcount + " words"),
+            Rtf.LINE_BREAK,
+            Rtf.P_SINGLE % (address.replace("\n", Rtf.LINE_BREAK)),
+            Rtf.P % Rtf.HALF_PAGE_VERTICAL_SPACE,
+            Rtf.P_CENTER % title.upper(),
+            Rtf.P_CENTER % ("by " + author),
+            Rtf.BLANK,
+            Rtf.BLANK,
         ])
 
     def add_document(self, document_lines):
@@ -223,22 +214,20 @@ class RTF(object):
             if matches:
                 # new chapter
                 if matches.groupdict()["chapter"]:
-                    self.lines.append(self.centered_p(self.bold(matches.groupdict()["chapter"])))
-
+                    self.lines.append(Rtf.P_CENTER_B % matches.groupdict()["chapter"])
                 if matches.groupdict()["numbered_chapter"]:
-                    self.lines.append(
-                        self.centered_p(self.bold('Chapter %s' % chapter_number)))
-                    self.lines.append(self.centered_p(self.bold(matches.groupdict()["numbered_chapter"])))
+                    self.lines.append(Rtf.P_CENTER_B % ('Chapter %s' % chapter_number))
+                    self.lines.append(Rtf.P_CENTER_B % matches.groupdict()["numbered_chapter"])
                     chapter_number += 1
             elif re.search(r'\\scenebreak|\\newscene', line):
                 # scene separation
-                self.lines.append(self.centered_p("#"))
+                self.lines.append(Rtf.P_CENTER % "#")
             else:
                 # normal paragraphes
                 line = line.replace(r"\emph{", '{\\ul ')
                 line = line.replace(r"\thought{", '{\\ul ')
-                self.lines.append(self.indented_p(line))
-        self.lines.append(self.centered_p("# # # # #"))
+                self.lines.append(Rtf.P_INDENT % line)
+        self.lines.append(Rtf.P_CENTER % "# # # # #")
         self.lines.append('}}')
 
     def write(self):
@@ -255,7 +244,6 @@ def main():
                         nargs=1,
                         metavar="FILE",
                         help='Main tex file.')
-
     args = parser.parse_args()
 
     try:
