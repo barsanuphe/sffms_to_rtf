@@ -19,7 +19,7 @@ class Project(object):
         self.wordcount = ""
         self.document = []
 
-    def manage_includes(self, start_lines):
+    def insert_included(self, start_lines):
         complete_lines = []
         for line in start_lines:
             matches = re.match(r'(\\include|\\input){(?P<filename>.*?)}', line)
@@ -48,9 +48,10 @@ class Project(object):
         start_lines = []
         complete_lines = self.lines
         compt = 0
+        # loop in case included files include other files
         while complete_lines != start_lines and compt < 10:
             start_lines = complete_lines
-            complete_lines = self.manage_includes(start_lines)
+            complete_lines = self.insert_included(start_lines)
             compt += 1
 
         if compt == 10:
@@ -58,7 +59,6 @@ class Project(object):
         else:
             self.lines = complete_lines
 
-    def clean_all_lines(self):
         # parse and join multiline tags
         joined_lines = []
         join_next_line = False
@@ -76,10 +76,6 @@ class Project(object):
                 joined_lines[-1] = joined_lines[-1][:-2]
 
         self.lines = joined_lines
-
-        # for (i, line) in enumerate(self.lines):
-        #     self.lines[i] = line.strip()
-        #  TODO clean everything
 
     def extract_parts(self):
         start_document = 0
@@ -221,9 +217,11 @@ class RTF(object):
         expr = re.compile(r'(\\chapter){(?P<numbered_chapter>.*?)}|'
                           r'(\\chapter\*){(?P<chapter>.*?)}')
         chapter_number = 1
+        # generating rtf lines
         for line in document_lines:
             matches = re.match(expr, line)
             if matches:
+                # new chapter
                 if matches.groupdict()["chapter"]:
                     self.lines.append(self.centered_p(self.bold(matches.groupdict()["chapter"])))
 
@@ -233,8 +231,10 @@ class RTF(object):
                     self.lines.append(self.centered_p(self.bold(matches.groupdict()["numbered_chapter"])))
                     chapter_number += 1
             elif re.search(r'\\scenebreak|\\newscene', line):
+                # scene separation
                 self.lines.append(self.centered_p("#"))
             else:
+                # normal paragraphes
                 line = line.replace(r"\emph{", '{\\ul ')
                 line = line.replace(r"\thought{", '{\\ul ')
                 self.lines.append(self.indented_p(line))
@@ -267,7 +267,6 @@ def main():
 
     p = Project(input_file)
     p.read_all_lines()
-    p.clean_all_lines()
     p.extract_parts()
     p.join_paragraphs()
     p.generate_output()

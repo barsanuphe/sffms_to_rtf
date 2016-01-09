@@ -5,7 +5,21 @@
 **sffms_to_rtf** is a script to convert latex projects using the
 [sffms](http://www.mcdemarco.net/sffms/) package to rtf files.
 
-Inspired by [sffms2rtf](https://github.com/ZungBang/sffms2rtf).
+It currently supports:
+- `\include`, `\input`
+- `\chapter`
+- `\newscene`, `\scenebreak`
+- `\emph`, `\thought`
+- `\runningtitle`, `\title`
+- `\author`, `\authorname`, `\surname`
+- `\address`
+- `\wordcount`
+
+Wordcount is not calculated automatically.
+
+`sffms` package options are ignored for the time being.
+
+This script was inspired by [sffms2rtf](https://github.com/ZungBang/sffms2rtf).
 
 ## Table of Contents
 
@@ -39,7 +53,11 @@ To uninstall, run:
       -i FILE, --input FILE
                             Main tex file.
 
+If the latex project is made of several files (with `\input` or `\include`), point
+to the main file.
+
 The converted rtf file is generated in the same directory as the source.
+
 
 
 
