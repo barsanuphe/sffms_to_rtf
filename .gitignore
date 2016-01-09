@@ -1,5 +1,9 @@
 .idea/
 sffms_to_rtf.egg-info/
-*.rtf
-TODO
+
+# generated files
 *.pyc
+*.rtf
+
+# libreoffice temp files
+.~*
