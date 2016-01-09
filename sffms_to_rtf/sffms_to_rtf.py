@@ -247,7 +247,7 @@ class RTF(object):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='sffmsexport.')
+    parser = argparse.ArgumentParser(description='sffms_to_rtf.')
     parser.add_argument('-i',
                         '--input',
                         dest='input',

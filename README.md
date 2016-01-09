@@ -1,8 +1,8 @@
-# sffmsexport
+# sffms_to_rtf
 
 ## What it is
 
-**sffmsexport** is a script to convert latex projects using the
+**sffms_to_rtf** is a script to convert latex projects using the
 [sffms](http://www.mcdemarco.net/sffms/) package to rtf files.
 
 Inspired by [sffms2rtf](https://github.com/ZungBang/sffms2rtf).
@@ -15,7 +15,7 @@ Inspired by [sffms2rtf](https://github.com/ZungBang/sffms2rtf).
 
 ### Requirements
 
-**sffmsexport** runs on Linux (tested in Archlinux only with python 3.5).
+**sffms_to_rtf** runs on Linux (tested in Archlinux only with python 3.5).
 
 ### Installation
 
@@ -25,12 +25,12 @@ After cloning this repository, run:
 
 To uninstall, run:
 
-    $ sudo pip uninstall sffmsexport
+    $ sudo pip uninstall sffms_to_rtf
 
 ### Usage
 
-    $ sffmsexport -h
-    usage: sffmsexport [-h] [-i FILE] [-o OUTPUT]
+    $ sffms_to_rtf -h
+    usage: sffms_to_rtf [-h] [-i FILE] [-o OUTPUT]
 
     sffmsexport.
 

@@ -5,10 +5,10 @@ Export latex sffms files to rtf.
 from setuptools import setup
 
 setup(
-    name='sffmsexport',
+    name='sffms_to_rtf',
     version='0.1.0',
     description='Convert sffms latex files to RTF.',
-    url='https://github.com/barsanuphe/sffmsexport',
+    url='https://github.com/barsanuphe/sffms_to_rtf',
     author='barsanuphe',
     author_email='mon.adresse.publique@gmail.com',
     license='GPLv3+',
@@ -27,7 +27,7 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'sffmsexport=sffmsexport:main',
+            'sffms_to_rtf=sffms_to_rtf:main',
         ],
     },
 

@@ -1,5 +1,5 @@
 .idea/
-sffmsexport.egg-info/
+sffms_to_rtf.egg-info/
 test/
 TODO
 *.pyc
